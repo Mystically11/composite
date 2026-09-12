@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'Google Sans Flex';
-  src: url('googlesansflex.woff2') format('woff2');
+  src: url('fonts/googlesansflex.woff2') format('woff2');
   font-weight: 100 900;
   font-display: block;
 }
@@ -8,6 +8,7 @@
 body {
   width: 260px;
   font-family: 'Google Sans Flex', system-ui, sans-serif;
+  font-variation-settings: 'ROND' 100;
   margin: 0;
   background-color: #2A2B2A;
   color: #fff;

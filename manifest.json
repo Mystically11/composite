@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Composite",
   "version": "1.0.0",
-  "description": "Hi",
+  "description": "Audio manipulation",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
