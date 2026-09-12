@@ -8,24 +8,26 @@
 <body>
   <div class="container">
     <h1 class="title">Composite</h1>
-    <div class="card">
+    <div class="card" id="speedCard">
       <p class="label">Playback speed</p>
       <div class="row">
         <input id="speed" type="range" min="0.25" max="4" step="0.01" value="1" />
         <output class="value" id="value">1.00&times;</output>
       </div>
+      <p class="reason" id="speedReason" hidden></p>
     </div>
-    <div class="card">
+    <div class="card" id="pitchCard">
       <p class="label">Pitch</p>
       <div class="row">
         <input id="pitch" type="range" min="-12" max="12" step="1" value="0" />
         <output class="value" id="pitchValue">0.0 st</output>
       </div>
-      <label>Hold <span class="key">Shift</span> for finer adjustment</label>
+      <label id="pitchHint">Hold <span class="key">Shift</span> for finer adjustment</label>
+      <p class="reason" id="pitchReason" hidden></p>
     </div>
   </div>
   <div class="problem-overlay" id="problem" hidden>
-    <p>Cannot control media on this page.</p>
+    <p>Chrome does not allow extensions to run on this page.</p>
   </div>
   <script src="popup.js"></script>
 </body>

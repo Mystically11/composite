@@ -46,13 +46,39 @@ async function shifterFor(el) {
 const unroutable = new WeakSet();
 const warned = new WeakSet();
 
+function pitchStatus(el) {
+  if (el.mediaKeys) return 'drm';
+  if (unroutable.has(el)) return 'captured';
+  if (routed.has(el)) return 'ok';
+
+  if (el.currentSrc && el.crossOrigin === null) {
+    try {
+      const url = new URL(el.currentSrc, location.href);
+      const http = url.protocol === 'http:' || url.protocol === 'https:';
+      if (http && url.origin !== location.origin) return 'cross-origin';
+    } catch {
+    }
+  }
+  return 'ok';
+}
+
+function probe(els = mediaElements()) {
+  const playing = els.find((el) => !el.paused) ?? els[0];
+  return {
+    rate: playing.playbackRate,
+    semitones: currentSemitones,
+    count: els.length,
+    pitch: pitchStatus(playing),
+  };
+}
+
 async function applyPitch(semitones) {
   currentSemitones = semitones;
   const ratio = 2 ** (semitones / 12);
 
   for (const el of mediaElements()) {
     if (semitones === 0 && !routed.has(el)) continue;
-    if (unroutable.has(el)) continue;
+    if (pitchStatus(el) !== 'ok') continue;
     try {
       const shifter = await shifterFor(el);
       shifter.parameters.get('ratio').value = ratio;
@@ -61,6 +87,8 @@ async function applyPitch(semitones) {
       if (!warned.has(el)) {
         warned.add(el);
         console.warn(`Composite: could not pitch-shift (${err.name}: ${err.message})`, el);
+
+        chrome.runtime.sendMessage({ type: 'STATE_CHANGED' }).catch(() => {});
       }
     }
   }
@@ -99,6 +127,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const els = mediaElements();
   if (!els.length) return;
 
-  const playing = els.find((el) => !el.paused) ?? els[0];
-  sendResponse({ rate: playing.playbackRate, semitones: currentSemitones, count: els.length });
+  sendResponse(probe(els));
 });

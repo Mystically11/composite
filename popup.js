@@ -1,8 +1,22 @@
 const slider = document.getElementById('speed');
 const value = document.getElementById('value');
+const speedCard = document.getElementById('speedCard');
+const speedReason = document.getElementById('speedReason');
+
 const pitchSlider = document.getElementById('pitch');
 const pitchValue = document.getElementById('pitchValue');
+const pitchCard = document.getElementById('pitchCard');
+const pitchReason = document.getElementById('pitchReason');
+const pitchHint = document.getElementById('pitchHint');
+
 const problem = document.getElementById('problem');
+
+const NO_MEDIA = 'No video or audio on this page.';
+const PITCH_REASONS = {
+  drm: 'Unavailable, media is DRM protected',
+  'cross-origin': 'Unavailable, pitch shift would break audio',
+  captured: 'Unavailable'
+};
 
 let tabId = null;
 
@@ -17,38 +31,58 @@ function renderPitch(semitones) {
 
 async function send(message) {
   try {
-    return (await chrome.tabs.sendMessage(tabId, message)) ?? null;
+    const res = await chrome.tabs.sendMessage(tabId, message);
+    return { scriptable: true, state: res ?? null };
   } catch {
+  }
+
+  try {
     await chrome.scripting.executeScript({
       target: { tabId, allFrames: true },
       files: ['content.js'],
     });
-    try {
-      return (await chrome.tabs.sendMessage(tabId, message)) ?? null;
-    } catch {
-      return null;
-    }
+  } catch {
+    return { scriptable: false, state: null };
   }
+
+  try {
+    const res = await chrome.tabs.sendMessage(tabId, message);
+    return { scriptable: true, state: res ?? null };
+  } catch {
+    return { scriptable: true, state: null };
+  }
+}
+
+function setControl(card, input, el, reason) {
+  const blocked = reason !== null;
+  input.disabled = blocked;
+  card.classList.toggle('unavailable', blocked);
+  el.textContent = reason ?? '';
+  el.hidden = !blocked;
+}
+
+function renderAvailability({ scriptable, state }) {
+  problem.hidden = scriptable;
+  if (!scriptable) return;
+
+  const hasMedia = (state?.count ?? 0) > 0;
+  setControl(speedCard, slider, speedReason, hasMedia ? null : NO_MEDIA);
+
+  const pitchBlock = hasMedia ? (PITCH_REASONS[state.pitch] ?? null) : NO_MEDIA;
+  setControl(pitchCard, pitchSlider, pitchReason, pitchBlock);
+  pitchHint.hidden = pitchBlock !== null;
 }
 
 async function setRate(rate) {
   slider.value = rate;
   renderRate(rate);
-  try {
-    await send({ type: 'SET_RATE', rate });
-  } catch {
-    problem.hidden = false;
-  }
+  renderAvailability(await send({ type: 'SET_RATE', rate }));
 }
 
 async function setPitch(semitones) {
   pitchSlider.value = semitones;
   renderPitch(semitones);
-  try {
-    await send({ type: 'SET_PITCH', semitones });
-  } catch {
-    problem.hidden = false;
-  }
+  renderAvailability(await send({ type: 'SET_PITCH', semitones }));
 }
 
 slider.addEventListener('input', () => setRate(Number(slider.value)));
@@ -69,20 +103,27 @@ window.addEventListener('keyup', (e) => {
 });
 window.addEventListener('blur', () => setFine(false));
 
+async function refresh() {
+  renderAvailability(await send({ type: 'GET_STATE' }));
+}
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.type === 'STATE_CHANGED') refresh();
+});
+
 (async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   tabId = tab.id;
-  try {
-    const res = await send({ type: 'GET_STATE' });
-    const rate = res?.rate ?? 1;
-    const semitones = res?.semitones ?? 0;
-    slider.value = rate;
-    pitchSlider.value = semitones;
-    renderRate(rate);
-    renderPitch(semitones);
-  } catch {
-    renderRate(1);
-    renderPitch(0);
-    problem.hidden = false;
-  }
+
+  const result = await send({ type: 'GET_STATE' });
+  const rate = result.state?.rate ?? 1;
+  const semitones = result.state?.semitones ?? 0;
+
+  slider.value = rate;
+  pitchSlider.value = semitones;
+  renderRate(rate);
+  renderPitch(semitones);
+  renderAvailability(result);
+
+  setInterval(refresh, 1000);
 })();

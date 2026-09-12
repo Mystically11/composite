@@ -27,7 +27,7 @@ body {
 .key {
   color: white;
   background-color: #996888;
-  border: 1px solid rgb(168, 132, 152);
+  border: 1px solid #a88498;
   padding-inline: 4px;
   padding-block: 2px;
   border-radius: 6px;
@@ -68,7 +68,24 @@ body {
 }
 
 input[type="range"] {
-  accent-color: #C99DA3;
+  accent-color: #aaa;
+}
+
+input[type="range"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.reason {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.card.unavailable .label,
+.card.unavailable .value,
+.card.unavailable label {
+  opacity: 0.4;
 }
 
 .problem-overlay[hidden] {
