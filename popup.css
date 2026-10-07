@@ -25,6 +25,20 @@ body {
   margin-bottom: 16px;
 }
 
+.fine-hint {
+  color: #aaa;
+  font-size: 13px;
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.reset-hint {
+  color: #aaa;
+  font-size: 12px;
+  text-align: center;
+  margin: 14px 0 0;
+}
+
 .key {
   color: white;
   background-color: #996888;
@@ -42,10 +56,6 @@ body {
   padding: 14px;
   border-radius: 10px;
   background: #5E4955;
-}
-
-.card label {
-  color: #aaa;
 }
 
 .row {
@@ -77,6 +87,13 @@ input[type="range"]:disabled {
   cursor: not-allowed;
 }
 
+.higher-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
 .reason {
   margin: 8px 0 0;
   font-size: 12px;
@@ -84,8 +101,7 @@ input[type="range"]:disabled {
 }
 
 .card.unavailable .label,
-.card.unavailable .value,
-.card.unavailable label {
+.card.unavailable .value {
   opacity: 0.4;
 }
 

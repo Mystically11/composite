@@ -2,16 +2,18 @@ const slider = document.getElementById('speed');
 const value = document.getElementById('value');
 const speedCard = document.getElementById('speedCard');
 const speedReason = document.getElementById('speedReason');
+const higher_speed = document.getElementById('higher_speed');
 
 const pitchSlider = document.getElementById('pitch');
 const pitchValue = document.getElementById('pitchValue');
 const pitchCard = document.getElementById('pitchCard');
 const pitchReason = document.getElementById('pitchReason');
-const pitchHint = document.getElementById('pitchHint');
 
 const problem = document.getElementById('problem');
 
 const NO_MEDIA = 'No video or audio on this page.';
+const NORMAL_MAX_SPEED = 4;
+const HIGHER_MAX_SPEED = 14;
 const PITCH_REASONS = {
   drm: 'Unavailable, media is DRM protected',
   'cross-origin': 'Unavailable, pitch shift would break audio',
@@ -70,7 +72,6 @@ function renderAvailability({ scriptable, state }) {
 
   const pitchBlock = hasMedia ? (PITCH_REASONS[state.pitch] ?? null) : NO_MEDIA;
   setControl(pitchCard, pitchSlider, pitchReason, pitchBlock);
-  pitchHint.hidden = pitchBlock !== null;
 }
 
 async function setRate(rate) {
@@ -87,13 +88,51 @@ async function setPitch(semitones) {
 
 slider.addEventListener('input', () => setRate(Number(slider.value)));
 pitchSlider.addEventListener('input', () => setPitch(Number(pitchSlider.value)));
+higher_speed.addEventListener('change', () => {
+  localStorage.setItem('higher_speed', String(higher_speed.checked));
+  const rate = Number(slider.value);
+  slider.max = higher_speed.checked ? HIGHER_MAX_SPEED : NORMAL_MAX_SPEED;
+  if (rate > NORMAL_MAX_SPEED && !higher_speed.checked) setRate(NORMAL_MAX_SPEED);
+});
 
-const SMALL_STEP = 1;
-const BIG_STEP = 0.1;
+const PITCH_STEP = 1;
+const FINE_PITCH_STEP = 0.1;
+const SPEED_STEP = 0.25;
+const FINE_SPEED_STEP = 0.01;
 
 function setFine(fine) {
-  pitchSlider.step = fine ? BIG_STEP : SMALL_STEP;
+  pitchSlider.step = fine ? FINE_PITCH_STEP : PITCH_STEP;
+  slider.step = fine ? FINE_SPEED_STEP : SPEED_STEP;
 }
+
+function handleWheel(event) {
+  const input = event.currentTarget;
+  const delta = event.deltaY || event.deltaX;
+  if (input.disabled || delta === 0) return;
+
+  event.preventDefault();
+  setFine(event.shiftKey);
+
+  const step = Number(input.step);
+  const previous = input.value;
+  const next = input.valueAsNumber - Math.sign(delta) * step;
+  input.value = Math.max(Number(input.min), Math.min(Number(input.max), next));
+  if (input.value !== previous) input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+slider.addEventListener('wheel', handleWheel, { passive: false });
+pitchSlider.addEventListener('wheel', handleWheel, { passive: false });
+
+function reset_slider(event) {
+  event.preventDefault();
+  const input = event.currentTarget;
+  if (input.disabled || input.value === input.defaultValue) return;
+  input.value = input.defaultValue;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+slider.addEventListener('contextmenu', reset_slider);
+pitchSlider.addEventListener('contextmenu', reset_slider);
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Shift') setFine(true);
@@ -119,6 +158,8 @@ chrome.runtime.onMessage.addListener((message) => {
   const rate = result.state?.rate ?? 1;
   const semitones = result.state?.semitones ?? 0;
 
+  higher_speed.checked = localStorage.getItem('higher_speed') === 'true' || rate > NORMAL_MAX_SPEED;
+  slider.max = higher_speed.checked ? HIGHER_MAX_SPEED : NORMAL_MAX_SPEED;
   slider.value = rate;
   pitchSlider.value = semitones;
   renderRate(rate);
