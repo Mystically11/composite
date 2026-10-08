@@ -8,12 +8,14 @@
 <body>
   <div class="container">
     <h1 class="title">Composite</h1>
+    <p class="fine-hint">Hold <span class="key">Shift</span> for finer adjustment</p>
     <div class="card" id="speedCard">
       <p class="label">Playback speed</p>
       <div class="row">
-        <input id="speed" type="range" min="0.25" max="4" step="0.01" value="1" />
+        <input id="speed" type="range" min="0.25" max="4" step="0.25" value="1" />
         <output class="value" id="value">1.00&times;</output>
       </div>
+      <label class="higher-option"><input id="higher_speed" type="checkbox" />higher?</label>
       <p class="reason" id="speedReason" hidden></p>
     </div>
     <div class="card" id="pitchCard">
@@ -22,9 +24,9 @@
         <input id="pitch" type="range" min="-12" max="12" step="1" value="0" />
         <output class="value" id="pitchValue">0.0 st</output>
       </div>
-      <label id="pitchHint">Hold <span class="key">Shift</span> for finer adjustment</label>
       <p class="reason" id="pitchReason" hidden></p>
     </div>
+    <p class="reset-hint">Right click sliders to reset them</p>
   </div>
   <div class="problem-overlay" id="problem" hidden>
     <p>Chrome does not allow extensions to run on this page.</p>
